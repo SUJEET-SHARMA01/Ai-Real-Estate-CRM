@@ -61,15 +61,61 @@ app/
 └── main.py              # app entrypoint, wires everything together
 ```
 
-## What's next (Steps 5–8, not built yet)
+## Frontend (Step 5 — done)
 
-- **Step 5**: React + Redux Toolkit frontend consuming these APIs
-- **Step 6**: LangGraph agent + Groq — start with ONE tool: parse free-text
-  interaction notes into structured fields (`InteractionFromText` schema is
-  already stubbed in `schemas.py` for this)
+A React + Redux Toolkit app lives in `frontend/`. It talks to this backend
+over REST and handles login/signup, and CRUD for clients, properties, and
+interactions, plus a dashboard summary.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env    # VITE_API_BASE_URL defaults to http://127.0.0.1:8000
+npm run dev
+```
+
+Opens at `http://localhost:5173`. Make sure the backend (`uvicorn app.main:app
+--reload`) is running at the same time — sign up for an account, then log in.
+
+Frontend structure:
+```
+frontend/src/
+├── api/client.js        # axios instance, attaches JWT to every request
+├── store/                # Redux Toolkit slices (auth, clients, properties, interactions)
+├── pages/                # Login, Signup, Dashboard, Clients, Properties, Interactions
+├── layout/AppLayout.jsx  # sidebar nav shell for authenticated pages
+└── components/ProtectedRoute.jsx
+```
+
+## AI agent — Step 6 (done: "Log Interaction" tool)
+
+Agents can now type a free-text note and the LLM extracts the structured
+fields (interaction type, sentiment, a clean summary, and an optional
+follow-up date) instead of filling every field by hand.
+
+**To use it, you need a free Groq API key:**
+1. Sign up at https://console.groq.com/keys and copy a key
+2. Add it to your backend `.env`: `GROQ_API_KEY=your-key-here`
+3. Restart the backend
+
+In the Interactions page, use the "AI quick log" toggle, pick a client, type
+what happened in plain English, and submit — no manual field-by-field entry.
+If `GROQ_API_KEY` isn't set, the endpoint returns a clear error telling you
+so (rather than crashing), and manual entry still works as a fallback.
+
+How it's built: `app/agent/graph.py` uses LangGraph with a single node today
+("extract"), calling Groq via `langchain-groq` with structured output
+(`app/agent/schemas.py` defines exactly what fields get extracted). It's
+deliberately built as a graph, not a plain function, so the remaining four
+tools — search, edit, sentiment analysis, follow-up suggestions — can be
+added as sibling nodes later without restructuring this one.
+
+## What's next (Steps 7–8, not built yet)
+
 - **Step 7**: Add remaining AI tools — search, sentiment analysis, follow-up
-  suggestions
-- **Step 8**: Dashboard — hot leads, overdue follow-ups, sentiment trends
+  suggestions, edit
+- **Step 8**: Hot-leads view, overdue follow-ups, sentiment trend graphs on
+  the dashboard
 
 ## Notes
 
